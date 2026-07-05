@@ -1,0 +1,217 @@
+{
+  "main": {
+    "id": "cbe04472863952cb",
+    "type": "split",
+    "children": [
+      {
+        "id": "0b64d80362ea35eb",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "dc920067e1cc8bc2",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "projects/_global/memory/INDEX.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "INDEX"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "6e1ff097ed0292d0",
+    "type": "split",
+    "children": [
+      {
+        "id": "3cd0e736cf6c9ebf",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "d0fdb6f265a2be02",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "445b9b67356945a9",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "b457971c0443a6da",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "8657c2f4c099ac95",
+    "type": "split",
+    "children": [
+      {
+        "id": "44958a57537df6d0",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "0aa99960d97a7868",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks"
+            }
+          },
+          {
+            "id": "9949f75941073f91",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "Untitled.canvas",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links from Untitled"
+            }
+          },
+          {
+            "id": "14b973ef8a842c5d",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "ad38140f5ab6c5de",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "All properties"
+            }
+          },
+          {
+            "id": "e8e7e316956c3f65",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "Untitled.canvas",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline of Untitled"
+            }
+          },
+          {
+            "id": "74d59251c6db5443",
+            "type": "leaf",
+            "state": {
+              "type": "git-view",
+              "state": {},
+              "icon": "git-pull-request",
+              "title": "Source Control"
+            }
+          }
+        ],
+        "currentTab": 5
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false,
+      "obsidian-git:Open Git source control": false
+    }
+  },
+  "active": "d0fdb6f265a2be02",
+  "lastOpenFiles": [
+    "projects/_global/memory/obsidian-skills.md",
+    "Untitled.base",
+    "Notes/axi-agent-ergonomics.md",
+    "Inbox/caching-layer-idea.md",
+    "Untitled 2.base",
+    "Welcome.md",
+    "Untitled 1.base",
+    "projects/_global/memory/INDEX.md",
+    "projects/_global/memory/INDEX.md.tmp.2278612.9f88cf5851f2",
+    "projects/_global/memory/obsidian-skills.md.tmp.2278612.4d8613d53ef6",
+    "Notes/axi-agent-ergonomics.md.tmp.2278612.e441bf4941bf",
+    "Notes",
+    "Daily/2026-07-05.md",
+    "Daily/2026-07-05.md.tmp.2278612.97d61eac88a8",
+    "Daily",
+    "Inbox/caching-layer-idea.md.tmp.2278612.75d47f4f4ca6",
+    "agent-memory/INDEX.md",
+    "Untitled.canvas"
+  ]
+}
