@@ -261,7 +261,7 @@ and explicitly does **not** signature-verify it at `CommitSegment`. The reasonin
 uplink-signed piece hash, so a chunk-proof mismatch on intact data is a client fault, not a worker
 fault."* The trust anchor for CLONE replicas at write time is therefore checkpoint 5 (the worker's
 signed piece hash), not the Merkle root. The root is used only later by the **audit** path
-([`dataflow-audit.md`](./dataflow-audit.md)), where a mismatch on intact bytes is classified as a
+([`dataflow-audit.md`](dataflow-audit.md)), where a mismatch on intact bytes is classified as a
 *client fault*.
 
 ---
@@ -299,7 +299,7 @@ signed piece hash), not the Merkle root. The root is used only later by the **au
 - [`../pkg/merkle`](../pkg/merkle) — the Merkle tree used to commit CLONE replicas.
 - [`../pkg/signing`](../pkg/signing) — `SignOrderLimit`, `SignPieceHash`, and the verification helpers.
 - [`../pkg/encryption`](../pkg/encryption) — AES-GCM `NewEncrypter` / `PadReader` / `TransformReader`.
-- [`dataflow-audit.md`](./dataflow-audit.md) — the proof-of-storage audit path (consumes what upload
+- [`dataflow-audit.md`](dataflow-audit.md) — the proof-of-storage audit path (consumes what upload
   wrote).
 - [`../SOURCE_STRUCTURE.md`](../SOURCE_STRUCTURE.md) — the layered-peer architecture every subsystem
   follows.

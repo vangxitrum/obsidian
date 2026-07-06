@@ -10,7 +10,7 @@ source for this pipeline).
 > **What audit operates on is server-side-encrypted data.** Workers store only encrypted pieces and
 > never hold keys; the audit never decrypts anything — it checks *possession of bytes*, not plaintext.
 > The bytes were encrypted by the **uplink service** at upload time (server-side AES-GCM; see
-> [`dataflow-upload.md`](./dataflow-upload.md)), so this is **not** an end-to-end / zero-knowledge
+> [`dataflow-upload.md`](dataflow-upload.md)), so this is **not** an end-to-end / zero-knowledge
 > scheme — the operator can read data, but the audit only proves storage.
 
 ---
@@ -232,7 +232,7 @@ more than a normal download can.
 
 **CLONE root caveat (carried over from upload):** the stored CLONE `MerkleRoot` is **unsigned** — the
 coordinator never signature-verified it at commit time (see
-[`dataflow-upload.md`](./dataflow-upload.md) §5). That is *why* a CLONE proof mismatch on intact bytes
+[`dataflow-upload.md`](dataflow-upload.md) §5). That is *why* a CLONE proof mismatch on intact bytes
 is classified `ClientFault` rather than a worker `Failure`: the bytes are anchored by the worker's
 uplink-signed piece hash, but the root might be a bad client commitment.
 
@@ -277,7 +277,7 @@ uplink-signed piece hash, but the root might be a bad client commitment.
 - [`../pkg/merkle`](../pkg/merkle) — `VerifyProof` / `NumLeavesFor` backing the CLONE chunk proof.
 - [`../pkg/signing`](../pkg/signing) — `SignOrderLimit`, `VerifyOrderLimitSignature`, and the
   signed-piece chain used in reverification.
-- [`dataflow-upload.md`](./dataflow-upload.md) — the upload path that wrote the pieces and roots this
+- [`dataflow-upload.md`](dataflow-upload.md) — the upload path that wrote the pieces and roots this
   audit reads back.
 - [`../SOURCE_STRUCTURE.md`](../SOURCE_STRUCTURE.md) — the layered-peer architecture every subsystem
   follows.

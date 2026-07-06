@@ -3,7 +3,7 @@
 How a DePIN peer turns a plain Go config struct into command-line flags, a YAML file,
 and finally a wired-up graph of running components. This is the onboarding guide:
 the flow and what to expect. For the components this wiring produces (the transport)
-see [`transport.md`](./transport.md).
+see [`transport.md`](transport.md).
 
 > Three independent mechanisms stack here: **`cfgstruct`** reflects struct tags into
 > flags, **`mud`** is a dependency-injection container, and **`pkg/modular/config`**
@@ -204,8 +204,8 @@ structs before constructing the peer.
 - [`../internal/mud`](../internal/mud) and [`../internal/mud/README.md`](../internal/mud/README.md)
   — the DI container in depth (`Ball`, `Component`, `Provide`, lifecycle).
 - [`../pkg/modular`](../pkg/modular) — the `RegisterConfig` / `BindAll` glue.
-- [`transport.md`](./transport.md) — a concrete graph of components this wiring builds.
-- [`identity-trust.md`](./identity-trust.md) — how identity/TLS options are configured
+- [`transport.md`](transport.md) — a concrete graph of components this wiring builds.
+- [`identity-trust.md`](identity-trust.md) — how identity/TLS options are configured
   and injected.
 - [`../SOURCE_STRUCTURE.md`](../SOURCE_STRUCTURE.md) — the Peer → Subsystem layering the
   container assembles.

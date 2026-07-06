@@ -3,7 +3,7 @@
 How a DePIN node proves *who it is* (a cryptographic node ID + mTLS), and how the
 system authorizes *what it may do* (signed order limits, orders, and piece hashes).
 This is the onboarding guide: the trust model and what to expect. For the wire it runs
-over see [`transport.md`](./transport.md).
+over see [`transport.md`](transport.md).
 
 > Scope note: this document is about **node identity** (mTLS certificates) and
 > **message signatures** (orders / piece hashes). It is **not** about data encryption.
@@ -234,6 +234,6 @@ Enforcement sites: `worker/piecestore/verification.go` (ckpt 2 & 3),
 - [`../internal/peertls`](../internal/peertls) — mTLS handshake and chain verification.
 - [`../pkg/signing`](../pkg/signing) — order / order-limit / piece-hash signing + verify.
 - [`../worker/trust`](../worker/trust) — the worker's approved-coordinator pool.
-- [`transport.md`](./transport.md) — where `ClientTLSConfig(id)` is used to dial.
-- [`configuration.md`](./configuration.md) — how identity and TLS options are wired in.
+- [`transport.md`](transport.md) — where `ClientTLSConfig(id)` is used to dial.
+- [`configuration.md`](configuration.md) — how identity and TLS options are wired in.
 - [`../SOURCE_STRUCTURE.md`](../SOURCE_STRUCTURE.md) — the layered peer architecture.

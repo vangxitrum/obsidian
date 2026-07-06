@@ -12,9 +12,20 @@ delegated to hermes (cost-sensitive backend), while the main model decides conte
 and destination.
 
 **How to apply:**
-- Any write of plans / specs / docs / notes into the vault → dispatch `hermes` via
-  Task tool (`subagent_type: hermes`) to do the actual write. Main thread supplies
-  exact target path + full content.
+- Use the **hermes CLI**, NOT the `hermes` Task subagent. The subagent is forced onto
+  a native Anthropic tier by the harness (runs Haiku, never a Hermes/router model) —
+  confirmed broken for this purpose.
+- Working command (verified 2026-07-06):
+  `hermes chat -m kr/claude-sonnet-4.5-agentic -q "<instruction>"`
+  Wrote to the vault with NO `--yolo` and no wrapper/allow-rule needed.
+- **Model matters** (backend = 9router at `127.0.0.1:20128`, `kr/` prefixed ids):
+  - default `nvidia/moonshotai/kimi-k2.6` → empty after tool calls (too weak). Avoid.
+  - `nvidia/deepseek-ai/deepseek-v4-pro` → 404 no creds.
+  - `kr/claude-sonnet-4.5-agentic` → works (agentic, drives tools + skills). Use this.
+- hermes has the `personal-obsidian` skill; instruct it e.g. "using personal-obsidian
+  skill, append '<text>' to <file> with today's date". It resolves vault paths itself.
+- For plans/specs, pass exact target path + content: dispatch
+  `hermes chat -m kr/claude-sonnet-4.5-agentic -q "write EXACTLY <content> to <path>"`.
 - **Automatically after every finalized plan** (planning/brainstorming done, plan
   approved): hermes writes it to `projects/<project>/plans/<YYYY-MM-DD>-<slug>.md`
   and refreshes `projects/<project>/INDEX.md`. No need to be asked.

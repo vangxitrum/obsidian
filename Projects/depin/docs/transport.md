@@ -4,8 +4,8 @@ How one DePIN node opens an authenticated gRPC connection to another, over eithe
 a **public TCP** socket or a **libp2p relay** stream — without the caller having to
 know which. This is the onboarding guide: how the layers fit and what to expect.
 For the dependency-injection wiring that builds these objects see
-[`configuration.md`](./configuration.md); for the mTLS / node-ID checks the
-transport relies on see [`identity-trust.md`](./identity-trust.md).
+[`configuration.md`](configuration.md); for the mTLS / node-ID checks the
+transport relies on see [`identity-trust.md`](identity-trust.md).
 
 > The transport is a thin custom stack over standard gRPC. Every connection is
 > TLS, and the TLS layer is the same regardless of whether the bytes travel over a
@@ -212,9 +212,9 @@ and feeds it to `NewDefaultDialer`; `worker/peer.go` picks **one** connector —
 
 - [`../internal/grpcutil`](../internal/grpcutil) — the connector/dial/pool source.
 - [`../internal/peertls`](../internal/peertls) — the mTLS layer the handshake uses.
-- [`identity-trust.md`](./identity-trust.md) — what `ClientTLSConfig(nodeURL.ID)`
+- [`identity-trust.md`](identity-trust.md) — what `ClientTLSConfig(nodeURL.ID)`
   actually verifies (node-ID pinning, cert chains, the five auth checkpoints).
-- [`configuration.md`](./configuration.md) — how `Dialer`/`Connector`/server are
+- [`configuration.md`](configuration.md) — how `Dialer`/`Connector`/server are
   wired into a peer via cfgstruct + mud.
 - [`../SOURCE_STRUCTURE.md`](../SOURCE_STRUCTURE.md) — the layered peer architecture
   the transport plugs into.
