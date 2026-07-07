@@ -4,21 +4,17 @@
     "type": "split",
     "children": [
       {
-        "id": "f6cdd12cfc0b0a50",
+        "id": "2cc1f9d473a8f8d0",
         "type": "tabs",
         "children": [
           {
-            "id": "71b1341b638fabf2",
+            "id": "257f96b753400a06",
             "type": "leaf",
             "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Welcome.md",
-                "mode": "source",
-                "source": false
-              },
+              "type": "empty",
+              "state": {},
               "icon": "lucide-file",
-              "title": "Welcome"
+              "title": "New tab"
             }
           }
         ]
@@ -112,12 +108,11 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "Untitled.canvas",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Outgoing links from Untitled"
+              "title": "Outgoing links"
             }
           },
           {
@@ -155,23 +150,25 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "Untitled.canvas",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline of Untitled"
+              "title": "Outline"
             }
           },
           {
             "id": "74d59251c6db5443",
             "type": "leaf",
             "state": {
-              "type": "git-view",
-              "state": {},
-              "icon": "git-pull-request",
-              "title": "Source Control"
+              "type": "bases",
+              "state": {
+                "file": "Untitled.base",
+                "viewName": "Table"
+              },
+              "icon": "lucide-table",
+              "title": "Untitled"
             }
           }
         ],
@@ -179,58 +176,59 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300
+    "width": 319.5
   },
   "left-ribbon": {
     "hiddenItems": {
+      "obsidian-git:Open Git source control": false,
+      "obsidian-excalidraw-plugin:New drawing": false,
       "switcher:Open quick switcher": false,
       "graph:Open graph view": false,
       "canvas:Create new canvas": false,
       "daily-notes:Open today's daily note": false,
       "templates:Insert template": false,
       "command-palette:Open command palette": false,
-      "bases:Create new base": false,
-      "obsidian-git:Open Git source control": false
+      "bases:Create new base": false
     }
   },
-  "active": "d0fdb6f265a2be02",
+  "active": "74d59251c6db5443",
   "lastOpenFiles": [
-    "projects/_global/memory/obsidian-skills.md",
-    "projects/_global/memory/INDEX.md",
-    "projects/_global/memory",
-    "projects/_global",
-    "projects",
-    "Untitled 2.base",
-    "Untitled 1.base",
     "Untitled.base",
-    "Projects/depin/plans/aioz-network-k8s-deploy-plan.md",
-    "Inbox/caching-layer-idea.md",
-    "Daily/2026-07-05.md",
+    "Untitled 1.base",
+    "Projects/depin/docs/piece-limit-encryption-fix.md",
+    "Untitled.md",
     "Welcome.md",
-    "Projects/_global/memory/INDEX.md",
-    "Projects/depin/aioz-network-k8s-deploy-plan.md.tmp.2287072.de17c1050d56",
-    "Projects/depin",
-    "Projects",
-    "inbox.md",
-    "Resources/aioz-network-k8s-deploy-plan.md",
-    "Resources/aioz-network-k8s-deploy-plan.md.tmp.2287072.37f30514e32e",
-    "projects/_hermes-test/hermes-write-test.md",
-    "Projects/backend/INDEX.md",
-    "Projects/depin/INDEX.md",
-    "Projects/backend/specs/2026-05-28-migrate-process-design.md",
-    "Projects/backend/docs/microsocks-ssh-tunnel.md",
-    "Projects/depin/specs/2026-06-04-worker-alias-design.md",
-    "Projects/depin/specs/2026-06-04-vertical-split-restructure-design.md",
-    "Projects/depin/specs/2026-05-25-uplink-sdk-upload-to-worker-design.md",
-    "Projects/depin/specs/2026-05-25-uplink-sdk-upload-pipeline-refactor-design.md",
-    "Projects/depin/specs/2026-05-22-uplink-sdk-design.md",
-    "Projects/depin/plans/2026-06-05-coord-vertical-split.md",
+    "2026-07-06-aioz-k8s-deploy-runbook.md",
+    "Resources/kubectl-cheatsheet.md",
+    "projects/depin/docs/sdk-benchmark.md",
     "Projects/depin/plans/2026-06-04-worker-vertical-split.md",
     "Projects/depin/docs/worker-autoupdate.md",
     "Projects/depin/docs/transport.md",
-    "Projects/depin/docs/piece-limit-encryption-fix.md",
     "Projects/depin/docs/identity-trust.md",
+    "Projects/depin/docs/configuration.md",
     "Projects/depin/docs/dataflow-audit.md",
+    "Projects/depin/docs/dataflow-upload.md",
+    "Daily/2026-07-07.md",
+    "projects/depin/INDEX.md",
+    "Projects/depin/INDEX.md",
+    "Projects/depin/docs/2026-07-06-deploy-staging.md",
+    "projects/backend/plans/2026-07-07-openweather-current-weather.md",
+    "projects/depin/docs",
+    "projects/depin",
+    "projects/backend/INDEX.md",
+    "projects/backend/plans",
+    "projects/backend",
+    "projects",
+    "Projects/depin/plans/2026-07-06-aioz-k8s-deploy-runbook.md",
+    "Projects/depin/docs/2026-07-06-worker-onboarding.md",
+    "Projects/depin/plans/2026-07-06-aioz-k8s-deploy-runbook.md.tmp.2287072.0545f0f58e5f",
+    "Projects/depin/plans/aioz-network-k8s-deploy-plan.md",
+    "Projects/depin/plans/2026-06-05-coord-vertical-split.md",
+    "Projects/depin/docs/COMPONENT_DOCS_CHECKLIST.md",
+    "Projects/backend/INDEX.md",
+    "projects/_global/memory",
+    "projects/_global",
+    "Untitled 2.base",
     "Untitled.canvas"
   ]
 }

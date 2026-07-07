@@ -1,3 +1,11 @@
+---
+type: spec
+project: backend
+tags: [backend, migration, process, design]
+created: 2026-05-28
+status: approved
+---
+
 # Migration Process Design
 
 **Date:** 2026-05-28  

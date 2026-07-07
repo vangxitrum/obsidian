@@ -1,3 +1,10 @@
+---
+type: doc
+project: backend
+tags: [backend, networking, socks5, ssh, microsocks]
+created: 2026-07-05
+---
+
 # SOCKS5 Proxy via microsocks + SSH Tunnel
 
 Route HTTP requests (curl, Go, etc.) through a remote machine's IP using a

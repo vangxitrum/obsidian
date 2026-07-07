@@ -1,3 +1,10 @@
+---
+type: doc
+project: depin
+tags: [depin, configuration, cfgstruct, mud, dependency-injection]
+created: 2026-07-05
+---
+
 # configuration — struct tags, cfgstruct, mud DI, modular (start here)
 
 How a DePIN peer turns a plain Go config struct into command-line flags, a YAML file,

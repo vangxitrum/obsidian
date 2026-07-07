@@ -1,3 +1,10 @@
+---
+type: doc
+project: depin
+tags: [depin, identity, trust, mtls, signing]
+created: 2026-07-05
+---
+
 # identity & trust — node identity, mTLS, and message signatures (start here)
 
 How a DePIN node proves *who it is* (a cryptographic node ID + mTLS), and how the

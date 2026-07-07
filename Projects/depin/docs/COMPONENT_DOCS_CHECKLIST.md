@@ -1,3 +1,10 @@
+---
+type: reference
+project: depin
+tags: [depin, docs, checklist]
+created: 2026-06-23
+---
+
 # Component README Checklist
 
 Tick `[x]` the components that should get a `README.md` in their folder.

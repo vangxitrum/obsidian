@@ -1,3 +1,10 @@
+---
+type: doc
+project: depin
+tags: [depin, dataflow, upload, encryption, erasure-coding]
+created: 2026-07-05
+---
+
 # dataflow: upload — end-to-end (the write path)
 
 How a file becomes durable, distributed, encrypted pieces across the DePIN network. This is a

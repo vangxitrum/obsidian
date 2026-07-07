@@ -1,3 +1,10 @@
+---
+type: index
+project: depin
+tags: [depin, index]
+created: 2026-07-05
+---
+
 # DePIN (AIOZ hub)
 
 Docs moved from `work/depin-workspace/depin` on 2026-07-05.
@@ -12,8 +19,12 @@ Docs moved from `work/depin-workspace/depin` on 2026-07-05.
 ## Plans
 - [[2026-06-04-worker-vertical-split]]
 - [[2026-06-05-coord-vertical-split]]
+- [[aioz-network-k8s-deploy-plan|k8s deploy plan]] - full free/OSS multi-node k3s + KEDA + monitoring
+- [[2026-07-06-aioz-k8s-deploy-runbook|k8s deploy runbook]] - 9-step zero→running sequence
 
 ## Component docs
 - [[dataflow-upload]] · [[dataflow-audit]] · [[transport]] · [[configuration]]
 - [[identity-trust]] · [[worker-autoupdate]] · [[piece-limit-encryption-fix]]
 - [[COMPONENT_DOCS_CHECKLIST]]
+- [[2026-07-06-deploy-staging|Deploy: Staging]] - staging k8s deploy of the coord stack
+- [[2026-07-06-worker-onboarding|Worker Onboarding]] - full new-worker onboarding flow

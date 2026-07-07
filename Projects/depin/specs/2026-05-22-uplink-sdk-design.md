@@ -1,3 +1,10 @@
+---
+type: spec
+project: depin
+tags: [depin, uplink-sdk, design]
+created: 2026-05-22
+---
+
 # uplink-sdk — Design
 
 A new top-level Go package, `uplink-sdk/`, that gives external callers a small,

@@ -1,3 +1,10 @@
+---
+type: doc
+project: depin
+tags: [depin, transport, grpc, p2p, libp2p]
+created: 2026-07-05
+---
+
 # transport — the custom gRPC + libp2p P2P transport (start here)
 
 How one DePIN node opens an authenticated gRPC connection to another, over either

@@ -1,3 +1,10 @@
+---
+type: doc
+project: depin
+tags: [depin, dataflow, audit, proof-of-storage]
+created: 2026-07-05
+---
+
 # dataflow: audit — end-to-end (the proof-of-storage path)
 
 How the coordinator forces every worker to *prove* it still holds the encrypted pieces it promised to

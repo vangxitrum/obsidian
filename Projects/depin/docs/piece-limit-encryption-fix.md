@@ -1,3 +1,10 @@
+---
+type: doc
+project: depin
+tags: [depin, bugfix, encryption, piece-limit]
+created: 2026-07-05
+---
+
 # `pieceLimit` undercounts encrypted shard size
 
 ## Symptom

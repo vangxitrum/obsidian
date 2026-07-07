@@ -1,3 +1,11 @@
+---
+type: spec
+project: depin
+tags: [depin, worker, alias, bigint, schema]
+created: 2026-06-04
+status: implemented
+---
+
 # Worker Alias (bigint) + legacy worker-table retirement
 
 Date: 2026-06-04

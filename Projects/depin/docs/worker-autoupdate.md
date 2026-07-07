@@ -1,3 +1,10 @@
+---
+type: doc
+project: depin
+tags: [depin, worker, autoupdate, versioncontrol]
+created: 2026-07-05
+---
+
 # Plan: Worker auto-update — faithful port of storj's storagenode-updater
 
 ## Context

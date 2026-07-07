@@ -1,3 +1,11 @@
+---
+type: spec
+project: depin
+tags: [depin, architecture, vertical-split, refactor]
+created: 2026-06-04
+status: implemented
+---
+
 # Vertical Split Restructure — Design
 
 **Date:** 2026-06-04

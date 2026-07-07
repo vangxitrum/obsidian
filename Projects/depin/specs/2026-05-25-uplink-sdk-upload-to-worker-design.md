@@ -1,3 +1,10 @@
+---
+type: spec
+project: depin
+tags: [depin, uplink-sdk, upload, worker, piece]
+created: 2026-05-25
+---
+
 # uplink-sdk → worker upload (full segment cycle)
 
 Wire the SDK's `UploadFile` end-to-end against a real worker: encrypt + erasure-encode

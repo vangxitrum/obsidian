@@ -1,3 +1,10 @@
+---
+type: spec
+project: depin
+tags: [depin, uplink-sdk, upload, pipeline, refactor]
+created: 2026-05-25
+---
+
 # uplink-sdk upload pipeline refactor
 
 Decompose the monolithic `upload.go` into a layered pipeline modeled on
