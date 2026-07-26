@@ -15,5 +15,9 @@ Docs moved from `work/backend` on 2026-07-05.
 ## Plans
 - [[2026-07-07-openweather-current-weather|OpenWeather Current Weather 2.5 + support matrix]]
 
+## Releases
+- [[v0.1.11|Release v0.1.11]]
+- [[v0.1.11-review|Release v0.1.11 review]]
+
 ## Docs
 - [[microsocks-ssh-tunnel]]

@@ -1,0 +1,40 @@
+---
+type: decision
+tags: [sish, ssh, go, tunnel-management]
+created: 2026-07-16
+agent: main
+---
+
+`ssh-management` implements `sish-manager`, a Linux-first Go 1.23 single binary with embedded HTML/CSS/JavaScript and migrations. It uses pure-Go SQLite, YAML plus `SISH_MANAGER_*` overrides, reusable sish profiles, structured HTTP tunnels, direct OpenSSH argv execution, process-group supervision, target TCP and public HTTP checks, SSE status/logs, optional Argon2id password authentication, server-side sessions, and CSRF protection.
+
+**Why:** The manager runs beside localhost or LAN targets and must own each SSH process to provide reliable lifecycle control, health visibility, reconnect backoff, restoration, and orphan cleanup.
+
+**How to apply:** Build with `go build -trimpath -o sish-manager ./cmd/sish-manager`. Verify with `go test ./...`, `go test -race ./...`, and `go vet ./...`. Deployment guidance and the hardened systemd unit are in `README.md` and `deploy/sish-manager.service`.
+
+The approved implementation plan was fully completed on 2026-07-16. End-to-end tests use a fake SSH executable plus local TCP/HTTP endpoints to verify reconnect, generated `-R` arguments, health, restoration, and cleanup.
+
+Tunnel log buffers contain only child SSH stdout/stderr. Manager lifecycle messages such as process PIDs and reconnect notices belong in runtime status and `last_error`, not the command-output log panel.
+
+Managed SSH commands use one verbosity level (`ssh -v`) because successful `ssh -N -T` sessions are otherwise normally silent. This guarantees useful connection, authentication, and forwarding diagnostics in the command-output log panel without reintroducing synthetic manager messages.
+
+The import dialog persists the last successfully parsed SSH command server-side in SQLite under the `last_import_command` setting. Authenticated clients fetch it from `GET /api/import`; invalid parse attempts do not replace the saved command.
+
+Tunnel lifecycle actions update UI state from their API response immediately instead of depending on SSE delivery. SSE remains the live health/log channel, sends heartbeats, and refreshes tunnel state after reconnect. Cards show pending start/stop/restart animations with reduced-motion support.
+
+The repository Makefile manages the local background deployment with `make build`, `start`, `stop`, `restart`, `restore`, `status`, and `logs`. It builds atomically, writes `.sish-manager.pid`, and validates the exact process command before stopping to avoid stale-PID mistakes.
+
+On 2026-07-19, the live instance was migrated from Makefile/nohup operation to the boot-persistent user unit `~/.config/systemd/user/sish-manager.service`. User lingering is enabled, so it starts at boot without login. It runs the repository binary and config as user `tuan`; manage it with `systemctl --user status|restart sish-manager` and `journalctl --user -u sish-manager`. The dashboard uses `127.0.0.1:8090` because unrelated services occupy ports 8080 and 8081. User units on this host cannot apply `PrivateDevices=true` or `ProtectKernelModules=true` because systemd fails capability setup with status 218.
+
+The manager's Argon2id password authentication protects only the control-plane dashboard. Per-tunnel HTTP Basic Auth was added on 2026-07-19 through migration 003 and a manager-owned loopback reverse proxy. Users enable it per tunnel in the dashboard; the server generates a 192-bit password, stores only a salted SHA-256 digest, and displays plaintext once. Protected SSH attempts forward to an ephemeral `127.0.0.1` proxy, which strips auth and private health-token headers before sending traffic to the original target. A random per-attempt token lets public health checks traverse the proxy without retaining plaintext credentials. Proxy and SSH lifecycles are coupled across stop, restart, reconnect, and restore. Disabling auth clears credentials; rotation generates a new one. Sish SSH key/password authentication still controls tunnel creation, not public HTTP visitors.
+
+For protected tunnels, Chromium `ERR_TOO_MANY_RETRIES` can indicate rejected or cached Basic Auth credentials rather than tunnel failure. Diagnose end to end: anonymous public requests should return `401` with `WWW-Authenticate`, credentialed requests should return the upstream status, and the original local target should remain independently reachable. The `note` tunnel was verified this way and its credential rotated on 2026-07-20; never persist the plaintext credential in memory notes.
+
+On 2026-07-20, tunnel access became a persisted per-tunnel enum: `none`, `basic`, or `authelia` (migration 004). The dashboard edit form selects Public, Basic Auth, or Authelia form login, and an access-control panel lists only protected subdomains. Public tunnels retain direct SSH forwarding. Basic and Authelia modes create manager-owned ephemeral loopback proxies tied to the SSH attempt lifecycle; Authelia mode calls a configured forward-auth endpoint, fails closed, relays login redirects and session cookies, strips spoofed identity/forwarding headers, and forwards verified `Remote-*` identity headers to the target. Public health checks bypass authentication through the existing random per-attempt health token.
+
+The live form-login deployment uses Caddy 2.10 and Authelia 4.39 in `deploy/note-auth/compose.yaml`. Caddy only serves the public portal through the `auth.tunnel.appdemo.cyou` tunnel at `127.0.0.1:15173`; Authelia's forward-auth API binds only `127.0.0.1:19091`. Its wildcard one-factor policy is safe because only tunnels explicitly set to Authelia mode invoke it. `note` targets its original `localhost:5173` and is currently the selected Authelia-protected tunnel; unrelated routes such as Grafana remain direct and public. TLS terminates at sish, so the manager provides trusted HTTPS forwarding metadata. Authelia uses a file user backend, SQLite named-volume storage, ignored secret files, 30-minute inactivity, 12-hour sessions, and optional 30-day remember-me. Containers use `restart: unless-stopped`; manage them from `deploy/note-auth` with Docker Compose. Never store the generated admin plaintext password in memory.
+
+A TLS trace on 2026-07-21 verified DNS, TLS 1.2/1.3, hostname SANs, and full Let's Encrypt chains for `note` and `auth`. It found that the sish HTTP listener could deliver the Authelia portal over plaintext because Caddy receives post-termination HTTP. Caddy now redirects requests carrying `X-Forwarded-Proto: http` to HTTPS, and both Caddy portal responses and manager-owned protected proxy responses emit one-year HSTS. HTTPS requests remain loop-free. Public TLS terminates at sish; post-termination traffic traverses encrypted SSH to loopback proxies, with only loopback/Docker-network HTTP between local components.
+
+Follow-up certificate verification returned OpenSSL code 0 and curl `ssl_verify_result=0` for both public hosts. The Let's Encrypt YE1/YE2 ECDSA chains include SAN matches, full cross-signed paths, CRL distribution, and Certificate Transparency SCTs. They do not advertise OCSP, so `openssl s_client -status` reporting no stapled OCSP response is expected. Antivirus warnings despite these results are likely stale trust support for the newer YE/Root YE chain, HTTPS interception by the antivirus, or URL/domain reputation classification; identify the exact product, message, and issuer shown on the affected device before changing server TLS.
+
+The SSH command import response must expose the tunnel create-input shape, not `store.Tunnel`. After tunnel writes moved to a strict DTO, returning the full store model caused the UI's parse-then-create flow to fail on read-only fields such as `id`. `importCommand` now converts imported tunnels through `tunnelInputFromTunnel`; an API-flow regression test covers import parsing, profile creation, and tunnel creation. The reconnect E2E test waits for the second fake SSH invocation before asserting post-reconnect health to avoid observing the first process's brief healthy state.

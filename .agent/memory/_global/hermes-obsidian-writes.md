@@ -27,10 +27,16 @@ and destination.
 - For plans/specs, pass exact target path + content: dispatch
   `hermes chat -m kr/claude-sonnet-4.5-agentic -q "write EXACTLY <content> to <path>"`.
 - **Automatically after every finalized plan** (planning/brainstorming done, plan
-  approved): hermes writes it to `projects/<project>/plans/<YYYY-MM-DD>-<slug>.md`
-  and refreshes `projects/<project>/INDEX.md`. No need to be asked.
+  approved): hermes writes it to `Projects/<project>/plans/<YYYY-MM-DD>-<slug>.md`
+  and refreshes `Projects/<project>/INDEX.md`. No need to be asked.
+  - **Capital-P `Projects/`** — the PARA top-level dir. NEVER lowercase `projects/`
+    (a legacy dir being deleted; writing there strands the file in the wrong place).
 - `<project>` = basename of work repo. Mapping: `work/depin-workspace/depin` →
-  `projects/depin`; `work/backend` (aioz-map / "MAP") → `projects/backend`.
+  `Projects/depin`; `work/backend` (aioz-map / "MAP") → `Projects/backend`.
+- **Updating an existing INDEX.md via hermes:** do NOT ask hermes to read-and-merge
+  (its read can miss the file and clobber it to a fresh stub — happened 2026-07-14,
+  wiped a vault INDEX). Instead stage the full corrected file content in a scratchpad
+  file yourself, then tell hermes to write it VERBATIM/byte-identical to the target.
 - **Exception:** `.agent/memory/` notes are written directly by the acting agent,
   NOT via hermes.
 
