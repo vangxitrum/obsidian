@@ -145,6 +145,24 @@ Full plan: local plan file
 `~/.claude/plans/now-let-test-worker-parallel-metcalfe.md` (hermes was rate-limited
 [HTTP 402 MONTHLY_REQUEST_COUNT] so it was NOT written to the vault Projects/depin/plans/).
 
+## 2026-08-04 addendum - monorepo version identity
+
+Storj uses one neutral `vMAJOR.MINOR.PATCH` Git tag as the source-release identity for
+the whole monorepo. Satellite, storagenode, updater, uplink, and other artifacts built
+from that tagged checkout normally embed the same semantic version plus commit/build
+provenance; the tag is not called a satellite or storagenode version. Independent
+component deployment happens in versioncontrol instead: every process has separate
+minimum, suggested, download URL, rollout seed, and cursor, so a running satellite,
+storagenode, and updater may be artifacts from different repository releases. Software
+SemVer is also separate from Storj's monotonic node API-capability version.
+
+Apply the same model to DePIN: keep neutral repo tags, name archives/images by component,
+and control worker/updater (and coord if needed) independently in deployment policy.
+DePIN already has distinct Worker and WorkerUpdater rollout entries. Current build sharp
+edges: `git describe --tags --long` embeds `vX.Y.Z-0-gHASH` even exactly on a tag, and only
+`release-coord` explicitly sets release=true; release builds should instead embed the
+exact tag for every shipped artifact and verify version, commit, release, and dirty state.
+
 ## 2026-07-17 addendum - rollout-at-scale test + store-dir gotcha
 
 `dev/rollout-scale-test.sh [N] [cursors...]` (NEW) - the "many machines on one host"

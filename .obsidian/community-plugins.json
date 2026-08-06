@@ -1,5 +1,7 @@
 [
   "obsidian-git",
   "obsidian-excalidraw-plugin",
-  "code-styler"
+  "code-styler",
+  "drawio-editor",
+  "terminal"
 ]

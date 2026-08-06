@@ -15,8 +15,8 @@ Each line shows the **target README path** for that component.
 > **Status (2026-06-23):** all 41 checked components have been generated (rich,
 > hashstore-style READMEs; cross-cutting topics in `docs/`). Verified: 41/41 files
 > present, 382/382 relative links resolve, key symbols spot-checked against source.
-> Not generated (left unchecked): `coord/wallet`, uplink client (group 4), uplink-SDK
-> (group 5), `pkg/pb`, `internal/grpcutil`, `internal/mud`, `internal/compensation`.
+> Not generated (left unchecked): uplink client (group 4), uplink-SDK
+> (group 5), `pkg/pb`, `internal/grpcutil`, `internal/mud`.
 
 ---
 
@@ -37,11 +37,13 @@ Each line shows the **target README path** for that component.
 - [x] **accounting** — Storage/bandwidth tally → `coord/accounting/README.md`
 - [x] **placement** — Geo/placement constraint engine → `coord/placement/README.md`
 - [x] **file / expireddeletion** — Object lifecycle & expiry GC → `coord/file/README.md`
-- [ ] **wallet** — Payment/wallet integration → `coord/wallet/README.md`
+- [x] **wallet** — Payment/wallet integration → `coord/wallet/README.md`
 - [x] **geoip** — Worker geo-location → `coord/geoip/README.md`
 - [x] **storage** — Metadata storage layer → `coord/storage/README.md`
 - [x] **server / healthcheck** — HTTP server + health → `coord/server/README.md`
 - [x] **db** — Persistence (migrations, seeds, coorddbtest) → `coord/db/README.md`
+- [x] **billing** — Client-facing balance/invoice RPCs → `coord/billing/README.md`
+- [x] **deposit** — On-chain deposit crediting & custodial sweeps → `coord/deposit/README.md`
 
 ## 3. Worker subsystems (`worker/`)
 
@@ -93,7 +95,8 @@ Each line shows the **target README path** for that component.
 - [x] **testplanet** — In-process integration harness → `internal/testplanet/README.md`
 - [ ] **grpcutil** — Custom gRPC transport (incl. P2P) → `internal/grpcutil/README.md`
 - [ ] **mud** — DI container → `internal/mud/README.md`
-- [ ] **compensation** — Worker payment calculation → `internal/compensation/README.md`
+- [x] **compensation** — Worker payment calculation → `internal/compensation/README.md`
+- [x] **billing** — Client usage pricing & ledger → `internal/billing/README.md`
 
 ## 8. Cross-cutting docs (not folder-bound — go in `docs/`)
 

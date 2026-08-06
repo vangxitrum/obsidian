@@ -1,9 +1,26 @@
 ---
-type: decision
-tags: [depin, worker-tags, node-tags, nodetag, planning, storj-port]
+type: fact
+tags: [depin, worker-tags, node-tags, nodetag, storj-port, shipped]
 created: 2026-07-22
 agent: main
 ---
+
+**UPDATE 2026-08-04**: shipped. Branch `feat/worker-tags` is merged into
+`develop` (same HEAD commit `702ee23`, confirmed via
+`git merge-base --is-ancestor`). Foundation-first scope below was built as
+planned: `pkg/nodetag` (Authority.Verify/LoadAuthorities/Include),
+`coord/contact/worker_tag.go` + `worker_tags_debug.go`
+(`GET /worker-tags/?worker_id=` → tags + `is_trusted`), `coord/db/worker_tags_repo.go`,
+`worker/contact/tags.go`, `cmd/keytool/cmd_sign_tags.go` (`keytool sign-tags
+[authority]`). `Worker.IsTrusted` is set only from an authority-signed
+`trusted_node=true` tag, never a self-signed one. Placement/selection
+consumption is still deferred (Phase 2, per plan) — confirm before assuming
+tags affect upload/download selection. Referenced from
+`docs/test-plan.md` (repo) / `[[depin-test-plan]]` Section 3, which treats
+this as "Worker Tag" distinct from the older S3-style `coord/tags`
+(contract/file tags, see `[[contract-file-tags-usage]]`).
+
+Original plan (2026-07-22) below, kept for the design rationale.
 
 Plan to port Storj **node tags** → depin **worker tags** (signed key=value pairs
 a worker advertises on check-in). Plan note:

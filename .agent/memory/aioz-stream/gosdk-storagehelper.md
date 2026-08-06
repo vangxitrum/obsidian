@@ -436,6 +436,21 @@ a real "cache the playlist" feature gets requested later.
 almost nothing in common (one is a PR, the other is a `curl`/download command), so
 picking wrong wastes a full round of clarifying questions on the wrong axis entirely.
 
+**2026-07-29 registration check, three days after the previous two same-session
+NotFounds - this time it HELD.** User said "register go-sdk client again with the
+provided identity" - "provided identity" turned out to be the same one as always
+(checked `secrets/gosdk-identity/uplink/` for anything newer than 2026-07-24 first,
+nothing changed - no new identity was actually provided, just the existing one).
+go-sdk local repo had moved again (`f9cbaee` → `c5f680f`, "feat(download): add segment
+prefetch for multi-segment downloads" - download-path only, unrelated to
+account.go) - confirmed `go build` clean before running. `GetAccount` this time
+returned the SAME registration from 2026-07-24 (`bb010caa-...`,
+`premium.accounts@aioz.io`) - no re-register needed. So the coord's registration loss
+isn't on a short/fixed cycle - it survived >3 days here after failing twice within
+minutes on 2026-07-24. Keep the "always live-check before assuming" rule, but don't
+assume every request needs an actual re-register - check first, only call
+`RegisterAccount` if `GetAccount` actually 404s.
+
 **2026-07-24 "register new go-sdk client" turned out to be closing packaging gaps, not
 core wiring** - an Explore agent confirmed the factory switch
 (`cmd/http/init.go`/`cmd/grpc/init.go` picking `MustNewGoSdkHelper` vs

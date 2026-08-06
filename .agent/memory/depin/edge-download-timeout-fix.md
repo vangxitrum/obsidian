@@ -174,5 +174,26 @@ Full `edgeserver` suite green, `go vet`/`gofmt` clean, `cmd/edgeserver` builds.
   module except the 3 already-pre-existing-broken spots: `cmd/uplink`'s broken
   imports, `internal/testplanet`'s `CreateContractWithPlacement` drift, and
   `worker/pieces_test`'s `trustpkg.Dialer` nil-arg issue - none touched by this
-  version bump, all present before it too). Removed the now-unused local
-  `../go-sdk` symlink.
+   version bump, all present before it too). Removed the now-unused local
+   `../go-sdk` symlink.
+
+## Fix v3: timeout now measures inactivity (2026-08-03)
+
+The absolute whole-download deadline incorrectly aborted healthy large transfers
+that continued making progress for more than two minutes. `WithDownloadTimeout`
+now means maximum download inactivity instead:
+
+- `DownloadManifest` and `DownloadManifestRange` create a sliding timer rather
+  than `context.WithTimeout`.
+- Every successful worker-piece read and every successful plaintext destination
+  write resets the timer. Tracking piece reads is essential because a large first
+  segment may be actively transferring before any plaintext can be emitted.
+- Expiry cancels with `context.DeadlineExceeded` via `context.WithCancelCause`;
+  `classifyDownloadErr` checks `context.Cause` so teardown symptoms remain mapped
+  to a timeout for edge HTTP error handling.
+- Edge keeps its five-minute configured value, now as a stall interval rather
+  than a wall-clock request limit.
+- RED/GREEN tests prove progress can continue beyond twice the configured
+  interval while no progress expires. Repeated race tests, SDK root plus
+  segment/piece packages, edge race tests, `git diff --check`, and a real
+  `cmd/edgeserver` build pass.

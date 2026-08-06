@@ -70,3 +70,21 @@ Related: [[relay-connected-peers-vs-reservations]], [[edge-download-timeout-fix]
 - Fixes user applied: download concurrency -> unlimited (all k pieces one wave; ~357->~180ms). go-sdk piecedownload ALREADY does long-tail cancel (fetch, first-k-wins, cancel stragglers) so overfetch/straggler handled when concurrency>k.
 - Remaining opt levers (ranked): (1) EDGE-ORIGIN CACHE (LRU) - none today, only CDN Cache-Control headers; biggest HLS/k6 win (skip coord+relay+worker on repeat). (2) bounded conn reuse over relay (amortize setup RTT) - needs worker rcmgr cap raised + client gate relaxed. (3) parallelize/prefetch segments (go-sdk download.go:269,424 loops segments SERIALLY). (4) multiple relays + geo-placement (single relay = RTT+bw chokepoint). (5) cache coord manifest/order-limits per object. (6) pipeline decode w/ piece arrival. (7) lower RS k. (8) confirm TLS1.3 on piece dial. (9) keepalive+warm libp2p conns (also fixes hung-conn goroutine leak). (10) relay BufferSize 8192.
 - go-sdk fix f9cbaee committed (single-use relay conns, opt1+2) by tuan-be; depin opt1+2 uncommitted; keepalive-on-grpcconn.New proposed (pool path has NO keepalive; upload path does at piecestore.go:82) - not yet done.
+
+**2026-08-03 circuit-lifecycle correction + conservative speed setting:**
+`relay_circuits_active` counts libp2p peer circuits, not the per-piece gRPC
+connections/streams managed by `internal/grpcutil/pool`. A successful piece path
+does call `downloadStreamReader.Close()`, which cancels the gRPC stream context;
+closing its `grpcconn.Conn` closes the libp2p stream but the swarm may correctly
+retain the shared peer circuit. Therefore a persistent edge adding roughly one
+circuit per contacted relayed worker is not proof that the pool's
+`stream.Context().Done()` cleanup failed, and forcibly closing peers would reset
+other concurrent downloads.
+
+The measured speed cost is repeated gRPC/TLS setup over those warm peer circuits
+(~1.77s per observed edge dial). The bounded-reuse implementation already targets
+that layer. Edge now defaults `server.relay-reuse-max-streams` to **2**: enough to
+halve setup churn, deliberately far below the old unbounded multiplexing behavior.
+Operators can set 0 for single-use. A config-tag RED/GREEN test pins the default;
+SDK pool and edge race tests pass, and built `edgeserver run --help` reports
+`default 2`. Live 8x80MiB validation is still required after redeployment.
