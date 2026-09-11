@@ -1,0 +1,2 @@
+- [[2026-09-04-trade-plan-journal]] - plan and status for the M5 trade plan journal app.
+- [[2026-09-07-live-binance-futures-orders]] - the Go sidecar that places the trade, its four guardrails, and the trace -> binance rename.

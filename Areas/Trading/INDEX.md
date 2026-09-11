@@ -1,0 +1,1 @@
+- [[2026-09-04-btc-swing-data-requirements]] - data needed for a low-risk BTC swing style targeting 15-20% TP.

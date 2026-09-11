@@ -2,12 +2,19 @@
 type: decision
 tags: [depin, segment-verify, audit, orders, storj-parity]
 created: 2026-08-06
+updated: 2026-08-07
 agent: main
 ---
 
-Plan for a standalone `cmd/segment-verify` tool (manual/on-demand segment health checking), ported
-from Storj `cmd/tools/segment-verify`. Branch `feat/segment-verifier`. Plan lives at
-`Projects/depin/plans/2026-08-06-segment-verify.md`; nothing implemented yet as of 2026-08-06.
+**SHIPPED 2026-08-07** (was: plan). All 12 tasks of
+`Projects/depin/plans/2026-08-06-segment-verify.md` implemented on branch
+`feat/segment-verifier`, uncommitted. `coord/segmentverify/` (library) +
+`coord/db/segmentverify_repo.go` (repo) + `cmd/segment-verify/` (binary) +
+`internal/testplanet/segment_verify_test.go` (9 e2e scenarios, all pass) +
+5-file build/release wiring (`make version-info` lists it) + README. Unit +
+DB + testplanet tests all green; smoke-tested for real against a live remote
+coordinator (68.183.189.51, real identity at `./identities/`, real 1818-segment
+DB) - see "Implementation findings" below.
 
 **User decisions:** targeted + bulk selectors; "align with Storj" wherever Storj has an opinion;
 standalone binary (not a `coord` subcommand, despite `cmd/coord/compensation.go`'s documented
@@ -80,15 +87,80 @@ schemes are normal - clamp `Retry = min(Check, len(Pieces))` instead.
 
 **testplanet can cover this end to end.** `Worker.DropCoordPieces` (`internal/testplanet/helpers.go:126`)
 kills pieces on a live worker (hashstore is append-only, so this is the sanctioned way),
-`Planet.PieceHolders` (`:135`), `Coord.AuditSegmentForFile` (`:94`), `Coord.MarkWorkerGone` (`:313`),
-`Planet.StopPeer` (`planet.go:340`), `testplanet.CloneRedundancy` / `DefaultRedundancy`
-(`planet.go:65-86`). This is why the library goes in `coord/segmentverify/` and not `package main` -
-`internal/` cannot import a main package, which is how Storj gets away with a single-package tool.
+`Planet.PieceHolders` (`:135`), `Coord.AuditSegmentForFile` (`:94`), `Planet.StopPeer` (`planet.go:340`),
+`testplanet.CloneRedundancy` / `DefaultRedundancy` (`planet.go:65-86`). This is why the library goes
+in `coord/segmentverify/` and not `package main` - `internal/` cannot import a main package, which is
+how Storj gets away with a single-package tool. `Coord.MarkWorkerGone` is NOT the right helper for a
+"disqualified, skip dialing" test - it only backdates `last_seen`/`is_online` (repair's online-window
+semantics); disqualify directly via `UPDATE workers SET disqualified_at = ...`.
 
-**Highest-uncertainty implementation item:** gorm `embedded` tag on a struct embedding
-`auditSegmentScan` (which carries its own `TableName()`), to add `FileID`. Spike it first; fallback is
-a flat 11-field struct still reusing the `auditPieces()` helper and the `file.RedundancyScheme` /
-`file.Pieces` scanners.
+## Implementation findings (2026-08-07)
+
+**The embedded-struct spike FAILED, as flagged as the highest-uncertainty item.**
+`type segmentVerifyScan struct { auditSegmentScan `gorm:"embedded"`; FileID vo.UUID }` compiles and
+queries without error, but every field from the embedded struct decodes to its zero value - only
+`FileID` (declared directly, not via embedding) comes back populated. Root cause: gorm's schema
+parser treats an anonymous `gorm:"embedded"` field as an association rather than flattened columns
+when that field's type itself implements `TableName()` (promoted from the embedded type). Verified
+against a live Postgres row, not assumed. Fallback used: flat 11 fields, own `TableName()`, reuse
+`auditPieces()` - exactly the plan's own documented fallback.
+
+**Pre-existing, unrelated bug: `coord/jobq/config.go:41`'s `MaxAttempts int32` panics `cfgstruct.Bind`
+("invalid field type: int32") and kills `make setup-coord` (and every other `coord` subcommand) at
+`init()`.** `internal/cfgstruct/cfgstruct.go`'s numeric-type switch has no `int32` case (only
+`int`/`int64`/`float64`). Confirmed via `git stash` that this branch never touched `cmd/coord` or
+`coord/jobq` - fully pre-existing. Blocks local `make setup-coord`; worked around by using a real
+remote coordinator's identity + DB directly instead. Not fixed (out of scope for this plan) - flagged
+to the user, who chose to route around it rather than have it fixed inline.
+
+**`cfgstruct.ConfigVar` is the mechanism for per-leaf-command config defaults**, when the same struct
+(e.g. `segmentverify.ServiceConfig`) is bound to multiple cobra commands that need different defaults
+for the same field. A plain Go field assignment in a cmd's `init()` does NOT work - `process.Bind`'s
+struct-tag-driven default always runs after any `init()` and unconditionally resets the field.
+Instead: tag the field `default:"${SOME_VAR}"` and pass `cfgstruct.ConfigVar("SOME_VAR", value)` as a
+`BindOpt` per call site (`internal/testplanet/coord.go` already does this for `${HOST}`/`${TESTINTERVAL}`).
+Used here for `run`'s `--service.check=3` vs `check`'s `--service.check=0`.
+
+**A shared `*NodeVerifier`'s `reportPiece` callback is last-assignment-wins**, since both `NewService`
+(wires it to filter into `problem-pieces.csv`, non-success only) and `check`'s own recording wrapper
+(wants every outcome, including SUCCESS, for its live table) mutate the same field on the same
+instance. Whichever runs second clobbers the other. Found by actually running the binary against real
+data (`check segment` showed "probed 0 of N" even though real dials happened) - not something a
+mocked unit test would ever catch. Fixed by calling `NewService` first, then the recording
+`SetReportPiece` after.
+
+**CSV writers (`CSVWriter`/`pieceCSVWriter`) now open their file lazily on first `Write`, not at
+construction.** `NewService` always builds all three writers (`segments-not-found.csv`,
+`segments-retry.csv`, `problem-pieces.csv`) regardless of which cobra leaf is running; `check` never
+calls `ProcessSegments` (the only thing that ever calls `Write`), so eager `os.Create` littered three
+empty files in the CWD on every `check` invocation. `run`'s behavior is unaffected - `ProcessSegments`
+always calls `Write` at least once per batch (even with zero problem segments, to emit the header),
+which is exactly when the file needs to exist.
+
+**A tiny test redundancy scheme (RS with `SuccessThreshold == TotalShares`) makes the retry-pass
+heuristic self-heal by accident.** If every piece already gets tried in pass 1 (Check == TotalShares),
+the retry pass's "reverse the piece list, probe a fresh one" logic has no genuinely untried
+alternative left - it just re-probes an already-succeeded piece, silently resolving the segment fully
+(Retry -> 0) even though the originally-offline worker was never actually recovered. This is faithful
+Storj behavior, not a depin bug, but it means an "offline worker lands in retry.csv" test needs at
+least two offline workers, pinned to both the first-pass slot (`Pieces[:Check]`) and the post-reversal
+retry-pass slot (`Pieces[:Check]` of the reversed list, i.e. originally the *last* piece) - one
+offline worker alone will very likely get "fixed" by the retry pass finding a different, alive piece
+(which is the desired, separately-tested behavior - see the "retry pass probes a different piece"
+scenario).
+
+**Local dev `coord-db` (docker, port 5445) was 5 migrations behind the repo (version 38 vs 43) before
+this session** - missing `000042_segments_created_at`, which this feature depends on entirely (every
+scan struct maps that column, so literally any query fails with `column "created_at" does not
+exist`). Migrated 38→43 with the user's explicit approval (took a `pg_dump` backup first); row counts
+(5940 files / 6242 segments / 1200 workers) unchanged after. Real production/demo data lives on a
+separate host, `demo` in `~/.ssh/config` (68.183.189.51) - its Postgres is also exposed on 5445 and
+was already at migration 43. Confirmed via a real `check segment <id>` run using the real identity at
+`./identities/` (CA+leaf bundle matching `identity.Config`'s expected filenames): resolved 60 real
+workers, minted 60 real GET_AUDIT order limits, dialed all 60 over real p2p/relay circuits - all
+`TIMED_OUT` (this sandbox has no route into AIOZ's relay mesh, expected), verdict `INCONCLUSIVE`,
+correct exit code 1. Proves the full pipeline end to end against real infrastructure, independent of
+network reachability.
 
 Related: [[worker-hashstore-pieces-endpoint]], [[coord-audit-metrics-instrumentation]],
-[[coord-repair-metrics-instrumentation]], [[depin-gitignore-allowlist-gotcha]].
+[[coord-repair-metrics-instrumentation]], [[depin-gitignore-allowlist-gotcha]], [[cfgstruct-bindable-types]].

@@ -533,3 +533,269 @@ of this module's own path. Not something to fix (it's Docker-internal state,
 correctly gitignored) - just always use targeted package paths
 (`./cmd/http/...` etc, as this whole gosdk workstream already does) instead of
 whole-module `./...` patterns in this repo.
+
+**2026-08-13 switched `GoSdkHelper.GetLink` to the canonical, cacheable edge
+download URL.** Old shape `<edge>/download?ticket=<t>&expire=<unix>` is the
+legacy edgeserver route: the ticket IS the URL, so no shared cache can key on
+it, and the depin edge deliberately serves that route as
+`Cache-Control: private` no matter what (`edgeserver/handler.go:setCacheControl`,
+`canonical && cfg.Public` gate). New shape is
+`<edge>/download/<fileID>?ticket=<t>` - depin `edgeserver/server.go:213`
+`GET /download/{fileId}` (`handleDownloadByID`), where the *path* (object id)
+is the stable cache key and the ticket rides out-of-key in the query so a
+fronting CDN can be configured to drop it from the cache key. Edge also accepts
+`Authorization: Bearer <ticket>` (`ticketFromRequest`, handler.go:470) -
+verified live, 200 with no query string at all. `ticketMatchesFileID` rejects a
+ticket whose embedded file id differs from the path, so a shared cache can't be
+poisoned across objects.
+
+Dropped the `expire=` param entirely: nothing in aioz-stream ever parsed it back
+(grepped - only cdn.go's unrelated legacy `/file/%s?expire=&signature=` scheme
+uses that name), the ticket already carries its own expiry, and it was pure
+per-request cache-key noise.
+
+**Why per-URL memoization would still help, and why the route change alone
+isn't sufficient:** `CreateDownloadTicketLocal` signs with
+`pkcrypto.HashAndSign` (ECDSA, randomized nonce), so *two mints of the same
+(fileID, expiresAt) produce different ticket bytes*. The URL therefore still
+differs on every `GetLink` call - only the path is stable. That's fine for a
+CDN keyed on path, useless for a browser/naive cache keyed on the full URL.
+`CdnHelper` already solves the equivalent problem with its `ticketMapping
+*sync.Map` (`cdn.go:818/856`); `GoSdkHelper` has no such cache. Left as a
+follow-up, not done.
+
+**Deployed edge blocker for the CDN win:** `edgeserver1.appdemo.cyou` currently
+returns `cache-control: private, max-age=86400, immutable` on the canonical
+route - i.e. depin's `CacheConfig.Public` (`edgeserver/config.go:73`,
+`default:"false"`) is still off in that deployment. Must be flipped to true
+(and only behind a CDN whose cache key is the object id, not the ticket) before
+any shared cache will store the body. Verified E2E on 2026-08-13 with a
+throwaway upload: 200 + correct body, `etag: "<fileID>"`, `If-None-Match` ->
+304, `Range: bytes=0-7` -> 206, bearer-header form -> 200.
+
+**Same session - three downstream cache bugs found while chasing "better for
+cache", all pre-existing at HEAD, all fixed:**
+1. `Cahche-Control` - misspelled header name at **6** redirect sites
+   (`video.controller.go` x4, `playlist.controller.go`, `player_themes.controller.go`).
+   Real `Cache-Control` was therefore never emitted on any presigned-link redirect.
+2. `max-age=%d` was fed `int(time.Until(expiredAt))` - a `time.Duration`, i.e.
+   **nanoseconds**. RFC 9111 wants seconds. Would have read ~86400000000000.
+3. `GoSdkHelper.GetLink` returned `expiry.Unix()` (**seconds**) while
+   `CdnHelper.GetLink` returns nanoseconds (CDN's `expire_at_ns`),
+   `models.FileInfoBuilder`'s default is `UnixNano()`, and every controller reads
+   it as `time.Unix(0, fileInfo.ExpiredAt)`. So on the gosdk backend `Expires`
+   resolved to **1970** and max-age went negative - caching fully dead. Changed to
+   `expiry.UnixNano()`; nanoseconds is the interface contract for GetLink's 2nd
+   return value.
+
+Collapsed all 6 duplicated blocks into `internal/controllers/cache_headers.go`
+`setRedirectCacheHeaders(ctx, expiredAtNs)` (emits `private, max-age=<sec>` +
+`Expires`, clamps negative max-age to 0), with
+`internal/controllers/cache_headers_test.go` as the regression guard.
+
+Reproduced the old shape live before fixing: `GET localhost:3000/api/media/
+<id>/player.json` on the running `./bin/api` returned
+`assets.thumbnail_url = https://edgeserver1.appdemo.cyou/download?ticket=...&expire=...`.
+Useful recipe: media ids come from `docker exec aioz-stream-db psql -U admin -d
+video-db` (creds in `debug.env`, port 5437), `/api/media/:id/player.json` and
+`/api/media/:id/thumbnail` are **noAuth** routes (`internal/routes/video.route.go:78-95`).
+`media_thumbnails` is only a `(media_id, thumbnail_id)` join table.
+Note `./bin/api` reads `./debug.env` (`APP_ENV`, default "debug") and hardcodes
+pprof on :6060, so a second instance can't be booted cleanly alongside it - and
+booting one anyway would double-run `cron.Start()`, the payment watcher and
+`mediaSummaryService.Run`, which is why the live re-check was handed back to the
+user rather than done by spawning a parallel instance.
+
+Pre-existing unrelated test failures in this repo (not caused by any of this):
+`internal/utils/summarizationclient` and `internal/utils/transcribe_client` hit
+`https://aiozstreamai.tunnel.zvault.ai` and fail with `remote error: tls:
+internal error`.
+
+**2026-08-18 GoSdkHelper.GetLink now never mints a link - go-sdk backend
+always downloads and serves bytes itself instead of redirecting.** User:
+"create a direct download function for go-sdk, we will download it directly
+with sdk instead of returning the redirect url." Scoped via AskUserQuestion
+to two decisions: (1) touch only go-sdk's own `GetLink` impl, leave
+`CdnHelper` untouched; (2) apply it EVERYWHERE go-sdk hands out a link, not
+just the 4 `ctx.Redirect` controller sites - user explicitly chose "also
+proxy segments through us", so the HLS segment-embed optimization
+([[gosdk-storagehelper]] 2026-07-14 entry) is deliberately reverted for the
+go-sdk backend.
+
+Implementation is a single-function change with zero call-site edits, because
+every one of the 6 `.GetLink(` callers repo-wide (`GetMediaThumbnail`,
+`GetMediaContent` non-playlist branch, `resolveSegmentURI` in the playlist
+branch, `GetPlaylistThumbnail`, `GetPlayerThemeLogo`,
+`resolveThumbnailUrl` in `internal/models/video.go`) already treats an empty
+link + nil error as "download and serve the bytes yourself" - the same
+contract `CdnHelper` uses for its `canGeneratePresignedLink==false` case.
+`GoSdkHelper.GetLink` (`internal/utils/storage/gosdk.go`) now just
+`return "", 0, nil` - deleted the `CreateDownloadTicketLocal`/
+`CreateDownloadTicket` minting logic and the `GetLinkExpiry` const/`time`
+import that only served it. `linkEndpoint` field + `WithLinkEndpoint` option
+left in place (still set by the constructor/`GOSDK_LINK_ENDPOINT` env var,
+just unread now) - ripping those out would touch `cmd/http/init.go`/
+`cmd/grpc/init.go`/env files, out of scope for this change; no lint stage
+exists in `.gitlab-ci.yml` in this repo currently so an unread field isn't a
+CI risk (the golangci-lint CI mentioned in an earlier entry must be a
+different repo/branch - `.golangci.yml` doesn't exist here).
+
+**Real bug fixed as a side effect, now load-bearing:** `GoSdkHelper.Download`
+previously ignored `Object.Offset`/`Size` entirely, always doing a
+whole-file `DownloadFile` from byte 0. Harmless before (the `if
+redirectUrl == ""` fallback branch was dead code for go-sdk since `GetLink`
+always succeeded), but now every packed-file read (thumbnail resolutions,
+chapter/caption files, video/audio content byte ranges, HLS segments) goes
+through this path, so it had to become range-correct. Fixed using go-sdk's
+`Client.DownloadFileRange(ctx, fileUUID, w, offset, length)` (owner-
+authenticated, `length<=0` means "to EOF", confirmed via `effectiveRange` in
+go-sdk's `download.go`): `Download` now calls `DownloadFileRange` whenever
+`Offset != 0 || Size > 0`, falls back to whole-file `DownloadFile` only for
+the degenerate `Offset==0 && Size<=0` case.
+
+Verified live end-to-end against the real coord with a throwaway program
+(`cmd/tmp_verify_directdl`, deleted after): uploaded a 21-byte known blob,
+confirmed `GetLink` returns `("", 0, nil)`, confirmed whole-file `Download`
+round-trips the exact bytes, confirmed a ranged `Download(Offset:5,
+Size:10)` returns exactly bytes `[5:15]`. Added
+`TestGoSdkHelper_GetLink_NeverMintsLink` to `gosdk_test.go` as a fast
+regression guard (no live coord needed - `GetLink` no longer touches the
+client at all). Full `go build`/`go vet -tags purego ./cmd/... ./pkg/...
+./internal/...` clean except the pre-existing, not-mine
+`limit_rate.go:34` unreachable-code vet note.
+
+**Not done / flagged, not asked this round:** no config toggle to re-enable
+link-minting later (e.g. if the CDN edge's `Public` cache flag from the
+2026-08-13 entry ever gets flipped and direct-links become worth it again) -
+implemented as an unconditional behavior swap per the literal ask; git
+history has the old ticket-minting code if this needs reverting.
+
+**2026-08-18 same day, reverted: "change it back to redirect link."** Restored
+`GoSdkHelper.GetLink`'s ticket-minting body exactly (CreateDownloadTicketLocal
++ CreateDownloadTicket fallback, canonical `/download/<fileID>?ticket=` link,
+`GetLinkExpiry` const, `time` import) - undoes the entry directly above.
+Removed `TestGoSdkHelper_GetLink_NeverMintsLink` (no longer a true contract).
+The `Download` offset/range fix (`DownloadFileRange`) was NOT reverted - user
+only asked about the redirect-vs-download behavior, not the offset bug fix,
+and it's correct regardless of which path GetLink takes. Note: by the time of
+this revert, a concurrent edit (same pattern as always - user in another
+window) had already changed `Download` further: wrapped the pipe writer in an
+8 MiB `bufio.Writer` and dropped the `Offset==0 && Size<=0` whole-file
+`DownloadFile` branch in favor of always calling `DownloadFileRange` (valid
+per `effectiveRange`'s docs - length<=0 means "to EOF", so it's equivalent for
+the whole-file case) - left as-is, not mine, not asked to touch.
+Build/vet/test clean after revert (only the pre-existing not-mine
+`limit_rate.go` vet note).
+
+**Net effect: go-sdk backend is back to redirect-based downloads** (same as
+before the direct-download detour earlier today) - HLS segment embedding,
+thumbnail URLs, and the 4 controller redirect endpoints all mint real
+presigned links again via `GetLink`.
+
+**2026-08-18 same day, flipped back to direct-download again: "now change
+back to our download directly."** Third flip in one session
+(link->direct->link->direct). Reapplied the exact same `GetLink` -> `return
+"", 0, nil` change and re-added `TestGoSdkHelper_GetLink_NeverMintsLink`,
+removed `GetLinkExpiry`/ticket-minting/`time` import again - identical to the
+first direct-download entry above. `Download`'s range-aware
+`DownloadFileRange` behavior was never touched across any of these flips.
+Build/vet/test clean (same pre-existing not-mine `limit_rate.go` note).
+**Current state as of this entry: direct download (no redirect link) for
+go-sdk.** Given the back-and-forth pace, check current file state directly
+before assuming which mode is live - don't trust this note's "current state"
+line without a quick `grep GetLink gosdk.go` first, since another flip may
+have happened since.
+
+**2026-08-18 same day, 4th flip: back to redirect link.** Same
+`GetLink` restore as the 2nd entry (ticket-minting body, `GetLinkExpiry`,
+`time` import), test removed again. Noticed another concurrent edit had
+landed on `gosdk.go` between flips (`log/slog` import added, presumably
+`Download`'s buffered-writer goroutine now logs something) - not touched,
+not mine. First patch attempt this round silently no-op'd (Python script's
+import-block assertion didn't match the now-`log/slog`-containing block, so
+it raised before writing anything) - caught by re-checking the file's actual
+current text before assuming the edit landed; redid it against the real
+current import block. **Lesson: with concurrent edits landing on this exact
+file every few minutes this session, always re-`grep`/re-read the target
+block immediately before a scripted replace, even seconds after the last
+check - don't reuse a block captured a few tool-calls ago.**
+Build/vet/test clean. **Current state as of this entry: redirect link (not
+direct download)** for go-sdk - but per the note above, verify live before
+trusting it.
+
+**2026-08-19, 5th flip: back to direct download.** Same pattern as the
+3rd entry - `GetLink` -> `return "", 0, nil`, `GetLinkExpiry`/ticket code
+removed, `time` import removed (kept `log/slog` and `bufio` from the ongoing
+concurrent edits), test re-added. Used a line-range replace this time
+(re-grepped exact current line numbers first) instead of whole-block string
+match, specifically because whole-block matches kept getting invalidated by
+concurrent edits landing on this file between turns - more robust against
+that.
+
+**Given 5 flips in ~1 day with no functional trigger stated each time,
+flagged to user: worth making this a runtime toggle (env var / GoSdkOption)
+instead of a code edit each time?** Not done yet - user hasn't asked for it,
+just recording the suggestion so a future session doesn't re-suggest from
+scratch. If asked, the clean way: add `directDownload bool` field +
+`WithDirectDownload()` option on `GoSdkHelper`, branch at the top of
+`GetLink` (`if h.directDownload { return "", 0, nil }` then fall through to
+existing ticket logic) - one small diff instead of swapping the whole
+function body every time.
+
+**2026-08-19, 6th flip: back to redirect url again.** Same restore as
+before. Build/vet/test clean. **Current state: redirect link (not direct
+download)** - verify live before trusting, per the standing note above (6
+flips now, concurrent edits keep landing on this exact file between turns).
+The "make it a runtime toggle" suggestion from the previous entry still
+stands, unanswered.
+
+**2026-08-20 added the link cache flagged as a follow-up in the 2026-08-13
+entry.** User: "adding link cache for go-sdk". Confirmed current state was
+redirect mode first (`grep GetLink` per the standing "verify live" note -
+6 flips had happened by 2026-08-19). Implemented exactly the gap that entry
+described: `CreateDownloadTicketLocal` signs with a randomized ECDSA nonce,
+so repeated `GetLink` calls for the identical `(id, offset, size)` minted a
+different URL every time - fine for the edge's path-keyed cache, useless for
+anything keyed on the full URL (browser cache, a fronting CDN not yet
+stripping the ticket from its cache key).
+
+Mirrored `CdnHelper.ticketMapping` (`cdn.go:818/856`) exactly: added
+`linkCache *sync.Map` field + `cachedGoSdkLink{link string; expiresAt
+int64}` value type + `WithLinkCache(*sync.Map)` option (parallels
+`WithTicketMapping`, also currently unused at call sites, same as its CDN
+counterpart) to `GoSdkHelper`/`gosdk.go`. Cache key
+`fmt.Sprintf("%s-%d-%d", object.Id, object.Offset, object.Size)` - same
+shape as CDN's `tickerKey`. Unlike CDN's buggy `-1000000` (1ms, likely
+meant to be a time.Second literal that got typo'd into nanoseconds) staleness
+check, used a named `linkCacheSafetyMargin = time.Minute` constant compared
+via `time.Until(...) > margin` - clearer and not copying that bug forward.
+On a hit within the margin, returns the cached link/expiry verbatim,
+skipping `ParseUUID`/`CreateDownloadTicketLocal`/`CreateDownloadTicket`
+entirely; on a miss (absent or near-expiry), mints as before and stores the
+result before returning.
+
+Added `TestGoSdkHelper_GetLink_CacheHit` (nil client on purpose - a
+fallthrough to minting would nil-pointer-panic, so a clean return proves the
+cache path fired) and `TestGoSdkHelper_GetLink_CacheExpired` (entry inside
+the safety margin must be treated as a miss - used a deliberately-invalid
+`object.Id` so the fallthrough fails fast at `ParseUUID` with a distinct
+error instead of needing a real client). First version of the expired test
+tried to assert via `recover()`/panic, which was wrong - a bad UUID string
+returns a normal error before ever reaching the nil client, not a panic;
+rewrote to assert on the returned error instead once the live test run
+caught it.
+
+Verified live against the real coord (throwaway `cmd/tmp_verify_linkcache`,
+deleted after): two `GetLink` calls for the same freshly-uploaded object
+returned byte-identical links (proving the cache hit, not just "didn't
+crash"); a second, different object got a distinct link (proving the cache
+key is actually object-scoped, not a global single-slot cache). Full
+`go build`/`go vet -tags purego ./cmd/... ./pkg/... ./internal/...` clean
+(only the pre-existing not-mine `limit_rate.go` vet note) and
+`go test ./internal/utils/storage/...` green.
+
+**Not done:** no eviction/pruning of `linkCache` - entries for objects that
+are never requested again (or ever deleted) stay in the map forever, unbounded
+by object count. Not raised by the user and go-sdk's per-file ticket cardinality
+here is probably small relative to CDN's, so left alone; worth a look if this
+ever shows up as a memory-growth concern.

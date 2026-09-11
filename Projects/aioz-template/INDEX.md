@@ -1,0 +1,1 @@
+- [[2026-09-04-service-template-scaffold]] - plan for the gonew-compatible Go service template composing aioz-config, aioz-logger and aioz-stats.

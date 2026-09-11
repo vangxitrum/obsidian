@@ -4,3 +4,23 @@
 - [[local-dev-env]] — local API run setup: app.env/debug.env, infra containers, repo gaps found, remaining Slack-token boot blocker (NOTE: blocker now gone, see [[per-video-storage-contract]]).
 - [[per-video-storage-contract]] — per-video tagged contracts + contract_id on RegisterJob; go-sdk 37bb2ea tags API, billing/refund window, stale-coord attribution blocker, sudo-free protoc recipe.
 - [[k3d-k6-disk-pressure]] — remote k3d k6 runners were evicted under node DiskPressure; local kind measurements are unrelated.
+- [[lint-ci-golangci]] — golangci-lint v2 CI ported from parser-service; 460 findings -> 0, blocking; ST1005/md5/dir-perm exclusions and why.
+- [[crop-review-fixes]] — swag fmt reformats unrelated generated files too (check/revert); crop-box review fixes summary.
+- [[hls-serving-contract]] - how playback resolves HLS from DB rows; the ENDLIST/winsize truncation trap, the audio-config 500, and the Uploads retry corruption.
+- [[template-alignment]] — contracts-first port of aioz-template: apierr, one error envelope, guardrail tests, version stamping, CI test stage; swag pin and formatter-hook gotchas.
+- [[aioz-stream-bug-report-2026-09]] — the defects found while doing it: trace-id file write, unauthenticated trace read, two SQLi paths, the ttl=0 API-key rejection.
+- [[slice-migration-state]] — vertical-slice migration: 4 of 14 domains done, the scaffolding, the two deliberate deviations, and the per-domain verification gate.
+- [[repo-layout]] — root tidy-up: Go packages into internal/, deploy assets into deploy/, email templates embedded; the four deploy paths that were already broken.
+- [[models-horizontal-split]] — internal/models split by layer: store interfaces, per-slice DTOs, per-domain variable files; how to drive the move with the compiler.
+- [[domain-package-and-entity-hubs]] — internal/models renamed to internal/domain and kept as a shared leaf; the GORM entity hubs (User, Media) that pin the rest, and why DAO was rejected.
+- [[media-load-options-and-apierr]] — store.MediaLoad kills the 19-query GetMediaById; 396 legacy error sites moved to apierr; the goimports -local trap that breaks CI lint.
+- [[monkit-observability-migration]] — prometheus metrics package replaced by aioz-common/stats monkit + a debug server on 6060; carries the four traps: the shadowed-err trap is a myth, monkit tasks live under the `function` measurement, echo's error handler runs outside the middleware chain, and cmd/http does not use internal/app/server.
+- [[live-sub-slices]] - live decomposed into stream/media/multicast/statistic sub-slices; the narrow-interface cycle rule, the dto.go convention, two swag @name/import traps, and the CI GOMODCACHE guardrail break.
+- [[m3u8-import-vs-demuxed-audio]] — hlsimport rejects AIOZ Stream's own masters because generateM3U8 now emits demuxed audio; repro + fix shape.
+- [[single-binary-cli]] - one `aiozstream` binary (api/grpc/migrate/version), global `--config-dir` + `config.yaml` replacing APP_ENV; the deploy host rename prerequisite, the CDN-stub boot recipe, and port-ownership checks.
+- [[aioz-common-uuid-text-columns]] — aioz-common UUID Value() raw bytes breaks text id columns (SQLSTATE 22021); fix: Value() returns String().
+- [[core-hls-master-m3u8-missing]] - job-worker fails every HLS playlist ("open .../master.m3u8") since core 9e7ce9a dropped -master_pl_name; uploader still reads it.
+- [[legacy-tables-drop-candidates]] - nothing dropped vs main; old AutoMigrate DBs adopt via idempotent 000001 + `migrate check`, 000003 renames 17 legacy tables and 86 columns to _deprecated_; replay-history method and pg_temp/zsh traps.
+- [[aioz-common-v030-migration]] - pg/redis/rabbitmq/http on aioz-common 6b79f13 (v0.3.0 + SSRF guard), implemented 2026-09-11 (uncommitted); the pin, guard, TimeZone and CheckRedirect traps; the old dev api stealing broker test messages.
+- [[upstream-golang-migrate]] - schema applied only by the upstream golang-migrate CLI (make migrate-*, CI job in migrate/migrate image with PROD/STAG_DATABASE_URL); aiozstream migrate cmd and all gorm AutoMigrate removed; gRPC boot bytea bug + guardrail.
+- [[docker-debug-server]] - compose api exposes the debug server on host loopback (DEBUG_ADDR=0.0.0.0 in the container, 127.0.0.1:${DEBUG_HOST_PORT:-6060}); the container-loopback trap and the compose-extends e2e traps.

@@ -39,6 +39,11 @@ and destination.
   file yourself, then tell hermes to write it VERBATIM/byte-identical to the target.
 - **Exception:** `.agent/memory/` notes are written directly by the acting agent,
   NOT via hermes.
+- **User override (2026-09-10, aioz-stream):** for the aioz-common v0.3.0 plan the user
+  said "save this to obsidian yourself". Main then wrote the plan file and the INDEX
+  line directly, with Write/Edit. An explicit instruction like that beats the hermes
+  routing. Unclear whether it is a standing change, so ask again if in doubt. The `kr/`
+  route in this note is dead anyway; see [[hermes-kiro-credentials-dead]].
 
 Also recorded in `~/.claude/AGENTS.md` (global CLAUDE.md). See project memory:
 [[map-overview]], [[hub-overview]].

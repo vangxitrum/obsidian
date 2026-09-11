@@ -13,3 +13,7 @@ Backend datasource ports into parser-service. Each source = 4 files:
 alphavantage_putcallratio(077), cftc(078, HTML report parse; report_type via metadata picks disaggregated/tff which sets spec=MM/comm=Prod or spec=LF/comm=Dealer), currencyratefrankfurter(079), fed(080; series_code/name via metadata; sync_states table skipped as fetcher-state), marketstack_commodity(081)/index(082; benchmark_id+weight via metadata)/liveprice(083; /intraday HTTP poll not websocket)/price(084; change computed vs MarketstackPricePrevAdjClose DB seed), polymarket_historyproxy(085; market via metadata clobTokenId)/hotmarkets(086; category via metadata, quota-allocation logic dropped).
 - None were websocket-only; all HTTP-polled -> all persisted.
 - Backend sources with no store.go (alphavantage in-memory, polymarket in-memory/LRU): designed new tables.
+
+- [[agm-selfreview-test-coverage]] — AGM BE Self-Review 113-TC suite: naming convention, the 4 API gaps blocking 59 TCs, the store-interface seam, and 2 validation defects.
+- [[shared-aioz-logger]] — parser-service now uses the shared aioz-log package (like crawler); adding that private module forced CI job-token auth + Dockerfile BuildKit secrets.
+- [[parser-service-v0.1.0-release]] — first release (2026-09-07): what the service is, where release notes live, and the 3 blocking findings (DATE/timestamptz flight_date bug, staleness-gate bypass, unbounded limit=-1).
